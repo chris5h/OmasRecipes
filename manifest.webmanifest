@@ -1,0 +1,17 @@
+{
+    "background_color": "lightpink",
+    "description": "Collection of Oma's Favorite Recipes.",
+    "display": "standalone",
+    "orientation" : "portrait",
+    "icons": [
+      {
+        "src": "images/icon.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }
+    ],
+    "name": "Oma's Favorite Recipes",
+    "short_name": "Oma's Recipes",
+    "start_url": "/index.html",
+    "id" : "/index.html"
+  }

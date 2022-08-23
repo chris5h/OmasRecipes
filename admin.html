@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // if ("serviceWorker" in navigator) {
+    //     navigator.serviceWorker.register("sw.js");
+    // }
+    window.addEventListener('load', function() {
+      window.history.pushState({}, '')
+    })
+
+    window.addEventListener('popstate', function() {
+      window.history.pushState({}, '')
+    })
+  </script>  
+  <link href="images/icon.png" rel="icon" type="image/x-icon" />  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <meta name="apple-touch-fullscreen" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Oma's Favorite Recipe" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Oma's Favorite Recipes</title>  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="resources/bootstrap.min.css" rel="stylesheet">
+  <link rel="manifest" href="manifest.webmanifest">
+  <script src="resources/bootstrap.bundle.min.js"></script>
+  <script src="resources/jquery-3.6.0.min.js"></script>  
+  <link href="resources/jquery.dataTables.min.css" rel="stylesheet">
+  <script src="resources/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="resources/font-awesome.min.css">
+  <script src="resources/recipes.js"></script>
+  <script src="resources/html2canvas.min.js"></script>
+  <script src="resources/js.cookie.js"></script>
+  <link href="resources/recipes.css" rel="stylesheet">  
+</head>
+<body>
+<div class="container">
+  <div class="btn-group input-group" role="group"  style="display: none; padding-top: 15px;padding-bottom: 15px;" id="close">
+    <button class="btn btn-outline-secondary nav_bar white"  onclick="switchTab('search_link')" onmouseover="$(this).removeClass('white')" onmouseout="$(this).addClass('white')"> Close ❌ </button>
+    <button class="btn btn-outline-info nav_bar white"  onclick="getScreen()" onmouseover="$(this).removeClass('white')" onmouseout="$(this).addClass('white')"> Download 💾 </button>
+  </div>
+  <div class="input-group" style="padding-top: 15px;padding-bottom: 15px;" id="type_menu">
+    <span class="input-group-text">Recipe Type</span>
+      <select class="form-select" id="type_list" onchange="searchRecipes($(this).val())">
+        <option value="">All</option>
+      </select>
+      <button onclick="loadTypesModal()" type="button" class="btn btn-outline-primary white" style="width: 100px;" onmouseover="$(this).removeClass('white');" onmouseout="$(this).addClass('white');"  data-bs-toggle="tooltip" title="Edit Types"><i class="fa fa-bars"></i></button>
+  </div>  
+  <div class="card" id="search_recipes" style="display: block; padding: 15px; ">
+  
+    <div class="card-body">
+      <table id="recipes_table" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Recipe</th><th>Ingredients</th>
+          </tr>
+        </thead>
+        <tbody id="search_body"></tbody>
+      </table>
+    </div>
+    <div class="card-footer" id="search_footer"></div>
+  </div>
+
+  <div class="card" id="current_recipe" style="display: none; z-index: 10;">
+    <h4 class="modal-title">Images</h4>
+    <span id="full_recipe">
+    <div class="card-header" id="recipe_title"></div>
+    <div class="card-body" id="recipe_body"><ul class="list-group" id="ingredients"></ul></div>
+    <div class="card-footer" id="directions"></div>
+    <div class="card-body" id="recipe_ending">
+      <ul class="list-group list-group-flush" id="notes"></ul>
+    </div>
+    <div class="card-body" id="recipe_pics">
+      <div id="slide_slow" class="carousel slide carousel-dark" data-bs-ride="carousel">
+        <!-- The slideshow/carousel -->
+        <div class="carousel-inner" id="show_inner">
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#slide_slow" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" style="background-color: black;"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#slide_slow" data-bs-slide="next">
+          <span class="carousel-control-next-icon" style="background-color: black;"></span>
+        </button>        
+      </div>
+    </div>
+  </span>
+  </div>
+
+  <a id="new_button" href="javascript:void(0)"  onclick="resetEditModal();$('#edit_id').val('new');addIngredient('','after');$('#edit_modal').modal('show');$('#edit_id').val('new');"  class="float" data-bs-toggle="tooltip" title="Add New Recipe">
+    <i class="fa fa-plus my-float"></i>
+  </a>
+  <div class="dropup" style="z-index: 100;">
+  <a id="edit_new_button" href="javascript:void(0)" class="edit_float" style="display: none; opacity: 0.75;" data-bs-toggle="dropdown">
+    <i class="fa fa-bars my-float"></i>
+  </a>
+  <ul class="dropdown-menu">    
+    <li><a class="dropdown-item" onclick="loadEditModal(active_recipe);" href="javascript:void(0)">✏️ Edit Recipe </a></li>
+    <li><a class="dropdown-item" onclick="showNotesModal()" href="javascript:void(0)">📝 Add/Edit Notes</a></li>
+    <li><a class="dropdown-item" onclick="$('#images_modal').modal('show')" href="javascript:void(0)">📷 Add/Edit Images</a></li>
+    <li><a class="dropdown-item"  onclick="delRecipe();" href="javascript:void(0)">🗑️ Delete Recipe</a></li>
+  </ul>
+  </div>
+</div>
+
+
+<!--  This is the modal to add/edit recipes -->
+<div class="modal fade" id="edit_modal">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">  
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title" id="modal_heading"></h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <h5>Details</h5>
+        <div class="form-floating mb-3 mt-3">
+          <input type="text" class="form-control" id="edit_name" placeholder="Recipe Name" autocomplete="off">
+          <label for="edit_name">Name</label>
+        </div>
+        <input type="hidden" id="edit_id" value="">
+        <div class="form-floating mb-3 mt-3">
+          <input type="text" class="form-control" id="edit_author" placeholder="Recipe Author" autocomplete="off" value="Oma">
+          <label for="edit_author">Author</label>
+        </div>
+
+        <div class="input-group mb-3">
+          <div class="form-floating flex-grow-1">
+          <select class="form-select" id="edit_type">
+          </select>
+          <label for="edit_author">Type</label>
+          </div>
+          <span class="input-group-text">
+              <button type="button" onclick="loadTypesModal()" type="button" class="btn btn-outline-primary white" onmouseover="$(this).removeClass('white');" onmouseout="$(this).addClass('white');"  data-bs-toggle="tooltip" title="Edit Types"><i class="fa fa-bars"></i></button>
+          </span>
+        </div>
+
+        <div style="margin-bottom: 5px;">
+          <h5 style="display: inline !important;">Ingredients </h5>
+          <h6 class="btn btn-outline-info btn-sm dropdown-toggle"  onclick="addIngredient('','append')" data-bs-toggle="ffdropdown" style="display: inline !important;" > ➕ </h6>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" onclick="addIngredient('','prepend')" href="javascript:void(0)">Add to Top</a></li>
+            <li><a class="dropdown-item" onclick="addIngredient('','append')" href="javascript:void(0)">Add to Bottom</a></li>
+          </ul>            
+        </div>
+
+        <div id="edit_ingredients_span">
+        </div>
+
+        <h5>Direction</h5>
+          <textarea class="form-control" rows="100" id="edit_directions" style="height: 125px;"></textarea>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary" onclick="editRecipe()">Save</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>            
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--  This is the edit types modal  -->
+<div class="modal" id="types_modal">
+  <div class="modal-dialog modal-lg ">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Recipe Types</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div class="list-group" id="type_edit_list">          
+        </div>        
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!--  This is the edit notes modal  -->
+<div class="modal" id="notes_modal">
+  <div class="modal-dialog modal-lg ">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Notes</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div class="list-group" id="notes_edit_list">
+        </div>
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!--  This is the edit images modal  -->
+<div class="modal" id="images_modal">
+  <div class="modal-dialog modal-lg ">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title">Images</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body nobreak" id="images_edit_list" style="text-align: center; justify-content: center;">
+      </div>
+
+      <div class="modal-body" id="add_images">
+        <h5>Add New Photo</h5>
+        <div class="mb-3">
+          <form id="new_form" method="post" action="resources/index.php" enctype='multipart/form-data'>
+          <input type='file' name='myfile[]' multiple accept="image/jpeg, image/png" class="form-control" required />
+          <input type="hidden" name="type" value="newimage">
+          <input type="hidden" name="recipe_id" id="recipe_id" value="">
+          <div class="form-floating mb-3 mt-3">
+            <input type="text" class="form-control" id="image_desc" placeholder="Description" name="description"  autocomplete="off">
+            <label for="image_desc">Description</label>
+          </div>
+          <input type="submit" value="Save" class="btn btn-primary"  style="float: right;">
+        </form>
+
+        </div>          
+      </div>
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- The Modal -->
+<div class="modal" id="delimg_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6>Edit/Delete Image?</h6>
+      </div>
+      <div class="modal-body" id="delimg_body" style="text-align: center;">
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  var recipes = [];
+  var names = [];  
+  var active_recipe;
+  var maxheight = 0;
+  $(document).ready(function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    drawTypes();
+    searchRecipes().then(function(){
+      switch (Cookies.get('action')){
+        case 'recipe':
+          loadRecipe(Cookies.get('id'));
+          Cookies.remove('action');
+          Cookies.remove('id');
+          break;
+        default:
+          // console.log('nuttin honey');
+          break;
+      }
+    });
+    $( "#edit_type" ).on( "change", function() {
+      if ($(this).val() == 'new'){
+        switchTab('search_link');
+        $('#edit_modal').modal('hide');
+        loadTypesModal();
+      }
+    });
+  });
+
+</script>
+</body>
+</html>

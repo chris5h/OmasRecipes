@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // if ("serviceWorker" in navigator) {
+    //     navigator.serviceWorker.register("sw.js");
+    // }
+    window.addEventListener('load', function() {
+      window.history.pushState({}, '')
+    })
+
+    window.addEventListener('popstate', function() {
+      window.history.pushState({}, '')
+    })
+  </script>  
+  <link href="images/icon.png" rel="icon" type="image/x-icon" />  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <meta name="apple-touch-fullscreen" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Oma's Favorite Recipe" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Oma's Favorite Recipes</title>  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="resources/bootstrap.min.css" rel="stylesheet">
+  <link rel="manifest" href="manifest.webmanifest">
+  <script src="resources/bootstrap.bundle.min.js"></script>
+  <script src="resources/jquery-3.6.0.min.js"></script>  
+  <link href="resources/jquery.dataTables.min.css" rel="stylesheet">
+  <script src="resources/jquery.dataTables.min.js"></script>
+  <script src="resources/html2canvas.min.js"></script>    
+  <script src="resources/recipes.js"></script>
+  <link href="resources/recipes.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <div class="btn-group input-group" role="group"  style="display: none; padding-top: 15px;padding-bottom: 15px;" id="close">
+    <button class="btn btn-outline-secondary nav_bar white"  onclick="switchTab('search_link')" onmouseover="$(this).removeClass('white')" onmouseout="$(this).addClass('white')"> Close ❌ </button>
+    <button class="btn btn-outline-info nav_bar white"  onclick="getScreen()" onmouseover="$(this).removeClass('white')" onmouseout="$(this).addClass('white')"> Download 💾 </button>
+  </div>
+  <div class="input-group" style="padding-top: 15px;padding-bottom: 15px;" id="type_menu">
+    <span class="input-group-text">Recipe Type</span>
+      <select class="form-select" id="type_list" onchange="searchRecipes($(this).val())">
+        <option value="">All</option>
+      </select>
+  </div>  
+  <div class="card" id="search_recipes" style="display: block; padding: 15px; ">
+    <div class="card-body">
+      <table id="recipes_table" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Recipe</th><th>Ingredients</th>
+          </tr>
+        </thead>
+        <tbody id="search_body"></tbody>
+      </table>
+    </div>
+    <div class="card-footer" id="search_footer"></div>
+  </div>
+
+  <div class="card" id="current_recipe" style="display: none;">
+    <span id="full_recipe">
+    <div class="card-header" id="recipe_title"></div>
+    <div class="card-body" id="recipe_body"><ul class="list-group" id="ingredients"></ul></div>
+    <div class="card-footer" id="directions"></div>
+    <div class="card-body" id="recipe_ending">
+      <ul class="list-group list-group-flush" id="notes"></ul>
+    </div>
+    <div class="card-body" id="recipe_pics">
+      <div id="slide_slow" class="carousel slide carousel-dark" data-bs-ride="carousel">
+        <!-- The slideshow/carousel -->
+        <div class="carousel-inner" id="show_inner">
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#slide_slow" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" style="background-color: black;"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#slide_slow" data-bs-slide="next">
+          <span class="carousel-control-next-icon" style="background-color: black;"></span>
+        </button>        
+      </div>
+    </div>
+  </span>
+  </div>
+
+<script>
+  var recipes = [];
+  var names = [];
+  var active_recipe;
+  var maxheight = 0;
+  $(document).ready(function() {
+    $.get( "resources/index.php?type=types", function( data ) {
+      var list = JSON.parse(data);
+      $.each(list, function(key, val){
+        $('#type_list').append($('<option>').val(key).text(val));
+      });
+    });
+    searchRecipes();
+  });
+
+</script>
+</body>
+</html>
